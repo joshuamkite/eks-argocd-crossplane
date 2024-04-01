@@ -16,4 +16,4 @@ spec:
       serviceAccountName: aws-load-balancer-controller
       containers:
         - name: aws-load-balancer-controller
-          image: docker.io/amazon/aws-load-balancer-controller:v2.4.0
+          # image: docker.io/amazon/aws-load-balancer-controller:v2.4.0
