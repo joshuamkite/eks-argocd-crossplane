@@ -16,3 +16,4 @@ spec:
       serviceAccountName: aws-load-balancer-controller
       containers:
         - name: aws-load-balancer-controller
+          image: public.ecr.aws/eks/aws-load-balancer-controller:v2.7.2
