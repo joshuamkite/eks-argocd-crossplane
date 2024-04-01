@@ -4,10 +4,10 @@ metadata:
   name: aws-load-balancer-controller
   namespace: argocd
 spec:
-  project: monitoring
+  project: default
   source:
     repoURL: "https://github.com/joshuamkite/eks-prometheus-grafana"
-    path: "helm/prometheus-grafana"
+    path: "kubernetes/aws-load-balancer-controller"
     targetRevision: feature/argocd
   destination:
     server: "https://kubernetes.default.svc"
