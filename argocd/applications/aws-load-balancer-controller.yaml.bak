@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: aws-load-balancer-controller
+  namespace: argocd
+spec:
+  project: monitoring
+  source:
+    repoURL: "https://github.com/joshuamkite/eks-prometheus-grafana"
+    path: "helm/prometheus-grafana"
+    targetRevision: feature/argocd
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
