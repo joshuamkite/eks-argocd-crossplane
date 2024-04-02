@@ -1,5 +1,5 @@
 
-# EKS with Prometheus; Grafana; Load Balancer Controller
+# EKS with Argo CD Prometheus; Grafana; Load Balancer Controller
 
 Deploy an EKS cluster with Prometheus and Grafana in 2 ways:
 - Quick and dirty
@@ -127,6 +127,32 @@ get secret to log in to Grafana
 kubectl get secret --namespace monitoring prometheus-grafana -o jsonpath="{.data.admin-password}" | base64 --decode; echo
 ```
 prometheus is available on port 9090
+
+## Version 3 - ArgoCD
+
+Install ArgoCD
+```bash
+helm repo add argo https://argoproj.github.io/argo-helm
+helm repo update
+helm install argocd argo/argo-cd --namespace argocd --create-namespace
+
+```
+
+After reaching the UI the first time you can login with username: admin and the random password generated during the installation. You can find the password by running:
+```bash
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+```
+> (You should delete the initial secret afterwards as suggested by the Getting Started Guide: https://argo-cd.readthedocs.io/en/stable/getting_started/#4-login-using-the-cli)
+> 
+> By default, the Argo CD API server is not exposed externally. You can access the Argo CD dashboard by port-forwarding:
+> 
+> kubectl port-forward svc/argocd-server -n argocd 8080:443
+> Then, visit http://localhost:8080 in your browser.
+
+Install first application:
+```bash
+kubectl apply -f '/Users/joshua/code-joshua/eks-proargocd/applications/metrics-server.yaml'
+```
 
 ## Notes
 
