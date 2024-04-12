@@ -149,10 +149,31 @@ kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.pas
 > kubectl port-forward svc/argocd-server -n argocd 8080:443
 > Then, visit http://localhost:8080 in your browser.
 
-Install first application:
-```bash
-kubectl apply -f '/Users/joshua/code-joshua/eks-proargocd/applications/metrics-server.yaml'
+Configure Repository in Argo CD
 ```
+kubectl apply -f file.yaml
+```
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: repo
+  namespace: argocd
+data:
+  url: "https://github.com/joshuamkite/eks-argocd.git"
+```
+
+Step 4: Deploy Your ApplicationSet
+Now, deploy your ApplicationSet manifest to the cluster. If not already applied, you can do this using kubectl:
+
+```
+kubectl apply -f applicationset.yaml -n argocd
+```
+
+
+
+
+
 
 ## Notes
 

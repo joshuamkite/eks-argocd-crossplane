@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: prometheus-grafana-lbc
+  namespace: argocd
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/joshuamkite/eks-argocd.git
+        revision: feature/argocd
+        directories:
+          - path: argocd/applications/*
+  template:
+    metadata:
+      namespace: argocd
+      name: "{{path.basename}}"
+    spec:
+      project: default
+      source:
+        helm:
+          valueFiles:
+            - "configs/{{path.basename}}/values.yaml"
+        path: "argocd/applications/{{path.basename}}"
+        repoURL: https://github.com/joshuamkite/eks-argocd.git
+        targetRevision: feature/argocd
+      syncPolicy:
+        automated:
+          prune: true
+      destination:
+        namespace: "{{path.basename}}"
+        server: https://kubernetes.default.svc
