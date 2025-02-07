@@ -170,11 +170,6 @@ Now, deploy your ApplicationSet manifest to the cluster. If not already applied,
 kubectl apply -f applicationset.yaml -n argocd
 ```
 
-
-
-
-
-
 ## Notes
 
 - We are using a simple IAM user rather than 'proper' roles to admin cluster 

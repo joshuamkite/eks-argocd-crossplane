@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: prometheus-grafana-lbc
+  name: my-applicationset
   namespace: argocd
 spec:
   generators:
@@ -12,20 +12,20 @@ spec:
           - path: argocd/applications/*
   template:
     metadata:
-      namespace: argocd
       name: "{{path.basename}}"
     spec:
       project: default
       source:
+        repoURL: https://github.com/joshuamkite/eks-argocd.git
+        targetRevision: feature/argocd
+        path: "argocd/applications/{{path.basename}}"
         helm:
           valueFiles:
             - "configs/{{path.basename}}/values.yaml"
-        path: "argocd/applications/{{path.basename}}"
-        repoURL: https://github.com/joshuamkite/eks-argocd.git
-        targetRevision: feature/argocd
+      destination:
+        server: "https://kubernetes.default.svc"
+        namespace: "{{path.basename}}"
       syncPolicy:
         automated:
           prune: true
-      destination:
-        namespace: "{{path.basename}}"
-        server: https://kubernetes.default.svc
+          selfHeal: true
