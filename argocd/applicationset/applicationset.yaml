@@ -1,36 +1,6 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: monitoring-namespace
-  namespace: argocd
-spec:
-  generators:
-    - list:
-        elements:
-          - name: monitoring-namespace
-            namespace: monitoring
-  template:
-    metadata:
-      name: "{{name}}"
-    spec:
-      project: default
-      source:
-        repoURL: https://github.com/joshuamkite/eks-prometheus-grafana
-        targetRevision: feature/argocd
-        path: argocd/applications/monitoring-namespace.yaml
-      destination:
-        server: https://kubernetes.default.svc
-        namespace: "{{namespace}}"
-      syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
-        syncOptions:
-          - CreateNamespace=true
----
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
   name: monitoring-apps
   namespace: argocd
 spec:
@@ -65,3 +35,4 @@ spec:
           selfHeal: true
         syncOptions:
           - CreateNamespace=true
+          - ServerSideApply=true
