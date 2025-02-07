@@ -7,7 +7,7 @@ spec:
   generators:
     - git:
         repoURL: https://github.com/joshuamkite/eks-argocd.git
-        revision: feature/argocd
+        revision: feature/crossplane
         directories:
           - path: argocd/applications/*
   template:
@@ -17,7 +17,7 @@ spec:
       project: default
       source:
         repoURL: https://github.com/joshuamkite/eks-argocd.git
-        targetRevision: feature/argocd
+        targetRevision: feature/crossplane
         path: "argocd/applications/{{path.basename}}"
         helm:
           valueFiles:

@@ -157,19 +157,10 @@ kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.pas
 ```
 
 ### 3. Configure Git Repository
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: repo
-  namespace: argocd
-data:
-  url: "https://github.com/joshuamkite/eks-argocd.git"
-```
 
 Apply configuration:
 ```bash
-kubectl apply -f repo-config.yaml
+kubectl apply -f argocd/config/repo-config.yaml
 ```
 
 ### 4. Deploy ApplicationSet
