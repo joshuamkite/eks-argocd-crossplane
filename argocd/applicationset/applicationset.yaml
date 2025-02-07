@@ -7,37 +7,20 @@ spec:
   generators:
     - list:
         elements:
-          - chart: aws-load-balancer-controller
-            version: 1.7.2
-            repoURL: https://aws.github.io/eks-charts
-            namespace: kube-system
-          - chart: prometheus-grafana
-            version: 55.5.0
-            repoURL: https://prometheus-community.github.io/helm-charts
-            namespace: monitoring
-          - chart: metrics-server
+          - name: metrics-server
+            chart: metrics-server
             version: 3.11.0
             repoURL: https://kubernetes-sigs.github.io/metrics-server/
             namespace: kube-system
   template:
     metadata:
-      name: "{{chart}}"
+      name: "{{name}}"
     spec:
       project: default
       source:
         repoURL: "{{repoURL}}"
         targetRevision: "{{version}}"
         chart: "{{chart}}"
-        helm:
-          values: |
-            {{if eq chart "aws-load-balancer-controller"}}
-            clusterName: personal-eks-workshop
-            serviceAccount:
-              create: true
-              annotations:
-                eks.amazonaws.com/role-arn: "arn:aws:iam::${AWS_ACCOUNT_ID}:role/AWSLoadBalancerControllerRole"
-              name: aws-load-balancer-controller
-            {{end}}
       destination:
         server: https://kubernetes.default.svc
         namespace: "{{namespace}}"
