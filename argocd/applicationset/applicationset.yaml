@@ -1,7 +1,35 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: my-applicationset
+  name: monitoring-setup
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - name: monitoring-namespace
+            namespace: monitoring
+  template:
+    metadata:
+      name: "{{name}}"
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/joshuamkite/eks-prometheus-grafana
+        targetRevision: feature/argocd
+        path: argocd/applications/monitoring-namespace.yaml
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{namespace}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: monitoring-apps
   namespace: argocd
 spec:
   generators:
@@ -12,6 +40,11 @@ spec:
             version: 3.11.0
             repoURL: https://kubernetes-sigs.github.io/metrics-server/
             namespace: kube-system
+          - name: prometheus
+            chart: kube-prometheus-stack
+            version: 55.5.0
+            repoURL: https://prometheus-community.github.io/helm-charts
+            namespace: monitoring
   template:
     metadata:
       name: "{{name}}"
