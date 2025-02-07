@@ -8,23 +8,32 @@ resource "aws_iam_policy" "aws_lb_controller" {
 resource "aws_iam_role" "aws_lb_controller_role" {
   name = "AWSLoadBalancerControllerRole"
 
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect = "Allow",
-        Principal = {
-          Federated = module.eks.oidc_provider_arn
-        },
-        Action = "sts:AssumeRoleWithWebIdentity",
-        Condition = {
-          StringEquals = {
-            "${module.eks.oidc_provider}:sub" : "system:serviceaccount:kube-system:aws-load-balancer-controller"
-          }
-        }
-      },
-    ]
-  })
+  assume_role_policy = data.aws_iam_policy_document.assume_role_policy.json
+}
+
+data "aws_iam_policy_document" "assume_role_policy" {
+  statement {
+    effect = "Allow"
+
+    principals {
+      type        = "Federated"
+      identifiers = [module.eks.oidc_provider_arn]
+    }
+
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "${module.eks.oidc_provider}:sub"
+      values   = ["system:serviceaccount:kube-system:aws-load-balancer-controller"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "${module.eks.oidc_provider}:aud"
+      values   = ["sts.amazonaws.com"]
+    }
+  }
 }
 
 resource "aws_iam_role_policy_attachment" "aws_lb_controller_attach" {
