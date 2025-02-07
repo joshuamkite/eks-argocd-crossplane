@@ -2,12 +2,12 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: aws-load-balancer-controller
-  namespace: argocd # This is the namespace where Argo CD is installed
+  namespace: argocd
 spec:
   project: default
   source:
-    repoURL: "https://aws.github.io/eks-charts" # The Helm repository URL
-    targetRevision: "1.7.2" # Specify the chart version here
+    repoURL: "https://aws.github.io/eks-charts"
+    targetRevision: "1.7.2"
     chart: aws-load-balancer-controller
     helm:
       values: |
@@ -18,7 +18,7 @@ spec:
             eks.amazonaws.com/role-arn: "arn:aws:iam::<your-account-id>:role/AWSLoadBalancerControllerRole"
           name: aws-load-balancer-controller
   destination:
-    server: "https://kubernetes.default.svc" # Your cluster's API server URL
+    server: "https://kubernetes.default.svc"
     namespace: kube-system
   syncPolicy:
     automated:

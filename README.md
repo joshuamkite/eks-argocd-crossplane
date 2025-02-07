@@ -2,14 +2,10 @@
 
 - [EKS Cluster Setup with Monitoring and GitOps](#eks-cluster-setup-with-monitoring-and-gitops)
   - [Prerequisites](#prerequisites)
-  - [Approach 1: Quick Setup with Port Forwarding](#approach-1-quick-setup-with-port-forwarding)
     - [1. Verify Cluster Access](#1-verify-cluster-access)
-    - [2. Install Metrics Server](#2-install-metrics-server)
-    - [3. Install Prometheus and Grafana](#3-install-prometheus-and-grafana)
     - [4. Access Monitoring Dashboards](#4-access-monitoring-dashboards)
   - [Approach 2: Production Setup with Load Balancer Controller](#approach-2-production-setup-with-load-balancer-controller)
     - [1. Deploy Load Balancer Controller](#1-deploy-load-balancer-controller)
-    - [2. Install Monitoring Stack](#2-install-monitoring-stack)
     - [3. Access Services](#3-access-services)
   - [Approach 3: GitOps with Argo CD](#approach-3-gitops-with-argo-cd)
     - [1. Install Argo CD](#1-install-argo-cd)
@@ -32,39 +28,12 @@ This guide describes three approaches to deploy an EKS cluster with Prometheus a
 - Helm installed
 - Terraform (or OpenTofu) installed
 
-## Approach 1: Quick Setup with Port Forwarding
-
-This approach is suitable for development and testing environments.
 
 ### 1. Verify Cluster Access
 ```bash
 kubectl get pods -n kube-system
 ```
 
-### 2. Install Metrics Server
-```bash
-kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-```
-
-Verify installation:
-```bash
-kubectl get pods -n kube-system
-kubectl get deployments -n kube-system
-```
-
-### 3. Install Prometheus and Grafana
-Add Helm repository:
-```bash
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-```
-
-Install monitoring stack:
-```bash
-helm install prometheus prometheus-community/kube-prometheus-stack \
-  --namespace monitoring \
-  --create-namespace \
-  --set alertmanager.persistentVolume.storageClass="gp2",server.persistVolume.storageClass="gp2"
-```
 
 ### 4. Access Monitoring Dashboards
 
@@ -109,20 +78,6 @@ helm upgrade -i aws-load-balancer-controller eks/aws-load-balancer-controller \
   --set serviceAccount.name=aws-load-balancer-controller
 ```
 
-### 2. Install Monitoring Stack
-
-Install metrics server and Prometheus/Grafana:
-```bash
-kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-
-helm install prometheus prometheus-community/kube-prometheus-stack \
-  --namespace monitoring \
-  --create-namespace \
-  --set alertmanager.persistentVolume.storageClass="gp2",server.persistVolume.storageClass="gp2" \
-  --values grafana-prometheus-custom-values.yaml
-```
 
 ### 3. Access Services
 
