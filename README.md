@@ -1,158 +1,162 @@
+# EKS Cluster Setup with Monitoring and GitOps
 
-# EKS with Argo CD Prometheus; Grafana; Load Balancer Controller
+- [EKS Cluster Setup with Monitoring and GitOps](#eks-cluster-setup-with-monitoring-and-gitops)
+  - [Prerequisites](#prerequisites)
+  - [Approach 1: Quick Setup with Port Forwarding](#approach-1-quick-setup-with-port-forwarding)
+    - [1. Verify Cluster Access](#1-verify-cluster-access)
+    - [2. Install Metrics Server](#2-install-metrics-server)
+    - [3. Install Prometheus and Grafana](#3-install-prometheus-and-grafana)
+    - [4. Access Monitoring Dashboards](#4-access-monitoring-dashboards)
+  - [Approach 2: Production Setup with Load Balancer Controller](#approach-2-production-setup-with-load-balancer-controller)
+    - [1. Deploy Load Balancer Controller](#1-deploy-load-balancer-controller)
+    - [2. Install Monitoring Stack](#2-install-monitoring-stack)
+    - [3. Access Services](#3-access-services)
+  - [Approach 3: GitOps with Argo CD](#approach-3-gitops-with-argo-cd)
+    - [1. Install Argo CD](#1-install-argo-cd)
+    - [2. Access Argo CD UI](#2-access-argo-cd-ui)
+    - [3. Configure Git Repository](#3-configure-git-repository)
+    - [4. Deploy ApplicationSet](#4-deploy-applicationset)
+  - [Important Notes](#important-notes)
 
-Deploy an EKS cluster with Prometheus and Grafana in 2 ways:
-- Quick and dirty
-- Using Load balancer controller with IAM Roles for Service Accounts for endpoint access
 
-- [EKS with Prometheus; Grafana; Load Balancer Controller](#eks-with-prometheus-grafana-load-balancer-controller)
-  - [Version 1 - quick and dirty](#version-1---quick-and-dirty)
-  - [Version 2 - Helm with load balancer controller](#version-2---helm-with-load-balancer-controller)
-  - [Notes](#notes)
+This guide describes three approaches to deploy an EKS cluster with Prometheus and Grafana monitoring:
 
-## Version 1 - quick and dirty
+1. Quick setup with port forwarding
+2. Production-ready setup with AWS Load Balancer Controller
+3. GitOps approach using Argo CD
 
-Based on https://www.youtube.com/watch?app=desktop&v=S41v1lVThds
+## Prerequisites
 
-Deploy and configure access to cluster.
+- AWS CLI configured with appropriate credentials
+- kubectl installed
+- Helm installed
+- Terraform (or OpenTofu) installed
 
-Check cluster
+## Approach 1: Quick Setup with Port Forwarding
+
+This approach is suitable for development and testing environments.
+
+### 1. Verify Cluster Access
 ```bash
-kubectl get pods -n kube-system 
+kubectl get pods -n kube-system
 ```
-Add metrics server
+
+### 2. Install Metrics Server
 ```bash
 kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 ```
-Check metrics server
+
+Verify installation:
 ```bash
-kubectl get pods -n kube-system 
-kubectl get deployments -n kube-system 
+kubectl get pods -n kube-system
+kubectl get deployments -n kube-system
 ```
-Add prometheus-community helm charts
+
+### 3. Install Prometheus and Grafana
+Add Helm repository:
 ```bash
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 ```
-Install charts 
+
+Install monitoring stack:
 ```bash
-helm install prometheus \
- prometheus-community/kube-prometheus-stack \ --namespace monitoring \
- --create-namespace \
- --set alertmanager.persistentVolume.storageClass="gp2",server.persistVolume.storageClass="gp2"
+helm install prometheus prometheus-community/kube-prometheus-stack \
+  --namespace monitoring \
+  --create-namespace \
+  --set alertmanager.persistentVolume.storageClass="gp2",server.persistVolume.storageClass="gp2"
 ```
-check services deployed
-```bash
-kubectl get all -n monitoring 
-```
-Set port forward for Prometheus
+
+### 4. Access Monitoring Dashboards
+
+For Prometheus:
 ```bash
 kubectl port-forward svc/prometheus-kube-prometheus-prometheus -n monitoring 4001:9090
 ```
-access on `127.0.0.1:4001`
+Access at: `http://127.0.0.1:4001`
 
-Get password for grafana (username is `admin`)
+For Grafana:
 ```bash
-kubectl get secret --namespace monitoring prometheus-grafana -o jsonpath="{.data.admin-password}" | base64 --decode; echo
-```
-port forward grafana 
-```
 kubectl port-forward service/prometheus-grafana 3000:80 --namespace monitoring
 ```
-access on `127.0.0.1:80`
+Access at: `http://127.0.0.1:3000`
 
-## Version 2 - Helm with load balancer controller
-
-Assumes cluster is deployed from `terraform` directory and kube api access
-
-Based on 
-https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.7/deploy/installation/
-
-IAM set up with terraform with cluster
-
-create load balancer controller service account 
-
+Get Grafana credentials:
 ```bash
-cd helm/
-kubectl apply -f aws-load-balancer-controller-sa.yaml
+# Username: admin
+# Password:
+kubectl get secret --namespace monitoring prometheus-grafana -o jsonpath="{.data.admin-password}" | base64 --decode; echo
 ```
 
+## Approach 2: Production Setup with Load Balancer Controller
+
+This approach is suitable for production environments, providing external access through AWS Load Balancers.
+
+### 1. Deploy Load Balancer Controller
+
+Create service account:
+```bash
+kubectl apply -f helm/aws-load-balancer-controller-sa.yaml
+```
+
+Install controller:
 ```bash
 helm repo add eks https://aws.github.io/eks-charts
 
-helm upgrade -i aws-load-balancer-controller eks/aws-load-balancer-controller -n kube-system --set clusterName=personal-eks-workshop --set serviceAccount.create=false --set serviceAccount.name=aws-load-balancer-controller
-
+helm upgrade -i aws-load-balancer-controller eks/aws-load-balancer-controller \
+  -n kube-system \
+  --set clusterName=personal-eks-workshop \
+  --set serviceAccount.create=false \
+  --set serviceAccount.name=aws-load-balancer-controller
 ```
-Add metrics server
+
+### 2. Install Monitoring Stack
+
+Install metrics server and Prometheus/Grafana:
 ```bash
 kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-```
-Add prometheus-community helm charts
-```bash
+
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+
+helm install prometheus prometheus-community/kube-prometheus-stack \
+  --namespace monitoring \
+  --create-namespace \
+  --set alertmanager.persistentVolume.storageClass="gp2",server.persistVolume.storageClass="gp2" \
+  --values grafana-prometheus-custom-values.yaml
 ```
-Install charts referencing custom values file
+
+### 3. Access Services
+
+Get Load Balancer URLs:
 ```bash
-helm install prometheus prometheus-community/kube-prometheus-stack --namespace monitoring --create-namespace --set alertmanager.persistentVolume.storageClass="gp2",server.persistVolume.storageClass="gp2" --values grafana-prometheus-custom-values.yaml
+kubectl get svc -n monitoring
 ```
 
-Find load balancer URLs for prometheus and Grafana (value in each case for `LoadBalancer Ingress` field):
-```bash
+Access format: `http://<LoadBalancer-Ingress>:<PORT>`
 
+- Prometheus: Port 9090
+- Grafana: Default HTTP port (80)
 
-kubectl get svc -n monitoring -l "app.kubernetes.io/name=grafana" -o yaml
-kubectl get svc prometheus-kube-prometheus-prometheus -n monitoring -o yaml
+## Approach 3: GitOps with Argo CD
 
-```
-or just
-```bash
-kubectl get svc -n monitoring 
-```
-
-Access works
-
-<LoadBalancer Ingress>:<PORT>   
-
-e.g.
-
-Prometheus
-
-http://ae99a3324ecde4748897e05f85bd0093-0f75be85f47bddef.elb.eu-west-1.amazonaws.com:9090
-
-Grafana
-
-http://ac4b5b9e183aa4228a88e27a5f85fb5e-c205708f2ad48239.elb.eu-west-1.amazonaws.com
-
-get secret to log in to Grafana
-```bash
-kubectl get secret --namespace monitoring prometheus-grafana -o jsonpath="{.data.admin-password}" | base64 --decode; echo
-```
-prometheus is available on port 9090
-
-## Version 3 - ArgoCD
-
-Install ArgoCD
+### 1. Install Argo CD
 ```bash
 helm repo add argo https://argoproj.github.io/argo-helm
 helm repo update
 helm install argocd argo/argo-cd --namespace argocd --create-namespace
-
 ```
 
-After reaching the UI the first time you can login with username: admin and the random password generated during the installation. You can find the password by running:
+### 2. Access Argo CD UI
+```bash
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+```
+Access at: `http://localhost:8080`
+
+Get initial admin password:
 ```bash
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 ```
-> (You should delete the initial secret afterwards as suggested by the Getting Started Guide: https://argo-cd.readthedocs.io/en/stable/getting_started/#4-login-using-the-cli)
-> 
-> By default, the Argo CD API server is not exposed externally. You can access the Argo CD dashboard by port-forwarding:
-> 
-> kubectl port-forward svc/argocd-server -n argocd 8080:443
-> Then, visit http://localhost:8080 in your browser.
 
-Configure Repository in Argo CD
-```
-kubectl apply -f file.yaml
-```
+### 3. Configure Git Repository
 ```yaml
 apiVersion: v1
 kind: ConfigMap
@@ -163,17 +167,35 @@ data:
   url: "https://github.com/joshuamkite/eks-argocd.git"
 ```
 
-Step 4: Deploy Your ApplicationSet
-Now, deploy your ApplicationSet manifest to the cluster. If not already applied, you can do this using kubectl:
-
+Apply configuration:
+```bash
+kubectl apply -f repo-config.yaml
 ```
+
+### 4. Deploy ApplicationSet
+```bash
 kubectl apply -f applicationset.yaml -n argocd
 ```
 
-## Notes
+## Important Notes
 
-- We are using a simple IAM user rather than 'proper' roles to admin cluster 
-- Services are world open. In production we would make these private behind a VPN or similar. Here we use NACLs to restrict access to our IP for demo.
-- load balancers won't be deleted as part of cluster `tofu destroy` and will block teardown of resources unless deployments removed first or deleted manually with, e.g. `helm uninstall prometheus -n monitoring`
-- Here we are using unencrypted http to access endpoints and Load balancer URLS. In production I would alias these with a a proper domain name and set up certificate manager or similar to support TLS encryption.
-- I am not committing my `backend.tf` file to source control because I don't want to disclose my AWS account number.
+1. **Security Considerations**:
+   - Current setup uses basic IAM user authentication
+   - Services are publicly accessible (restricted by NACLs to specific IPs)
+   - Using unencrypted HTTP for endpoints
+   - Consider using VPN access and proper TLS certificates in production
+
+2. **Resource Management**:
+   - Load balancers must be manually deleted before cluster destruction
+   - Use `helm uninstall prometheus -n monitoring` before running `terraform destroy`
+
+3. **Production Recommendations**:
+   - Implement proper IAM roles instead of IAM users
+   - Set up private VPC endpoints
+   - Configure TLS certificates using AWS Certificate Manager
+   - Use proper DNS aliases for Load Balancer URLs
+   - Implement proper backup and disaster recovery procedures
+
+4. **Source Control**:
+   - Backend configuration (`backend.tf`) should be managed separately
+   - Sensitive information should be managed through secrets management
