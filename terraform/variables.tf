@@ -4,17 +4,17 @@ variable "cluster_name" {
   default     = "personal-eks-workshop"
 }
 
-variable "cluster_version" {
-  description = "EKS cluster version."
-  type        = string
-  default     = "1.29"
-}
+# variable "cluster_version" {
+#   description = "EKS cluster version."
+#   type        = string
+#   default     = "1.29"
+# }
 
-variable "ami_release_version" {
-  description = "Default EKS AMI release version for node groups"
-  type        = string
-  default     = "1.29.0-20240129"
-}
+# variable "ami_release_version" {
+#   description = "Default EKS AMI release version for node groups"
+#   type        = string
+#   default     = "1.29.0-20240129"
+# }
 
 variable "vpc_cidr" {
   description = "Defines the CIDR block used on Amazon VPC created for Amazon EKS."
@@ -29,7 +29,7 @@ variable "eks_managed_node_groups" {
     desired_size = number # 3
   })
   default = {
-    desired_size = 2
+    desired_size = 1
     min_size     = 1
     max_size     = 4
   }

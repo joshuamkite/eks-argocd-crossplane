@@ -1,32 +1,30 @@
-
-# Finally, the eks.tf file specifies our EKS cluster configuration, including a Managed Node Group:
-
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 19.16"
+  version = "~> 20.33.1"
 
-  cluster_name                   = var.cluster_name
-  cluster_version                = var.cluster_version
-  cluster_endpoint_public_access = true
-  enable_irsa                    = true
+  cluster_name = var.cluster_name
+  # cluster_version                          = var.cluster_version
+  cluster_endpoint_public_access           = true
+  enable_irsa                              = true
+  enable_cluster_creator_admin_permissions = true
 
-  cluster_addons = {
-    vpc-cni = {
-      before_compute = true
-      most_recent    = true
-      configuration_values = jsonencode({
-        env = {
-          ENABLE_POD_ENI                    = "true"
-          ENABLE_PREFIX_DELEGATION          = "true"
-          POD_SECURITY_GROUP_ENFORCING_MODE = "standard"
-        }
-        nodeAgent = {
-          enablePolicyEventLogs = "true"
-        }
-        enableNetworkPolicy = "true"
-      })
-    }
-  }
+  # cluster_addons = {
+  #   vpc-cni = {
+  #     before_compute = true
+  #     most_recent    = true
+  #     configuration_values = jsonencode({
+  #       env = {
+  #         ENABLE_POD_ENI                    = "true"
+  #         ENABLE_PREFIX_DELEGATION          = "true"
+  #         POD_SECURITY_GROUP_ENFORCING_MODE = "standard"
+  #       }
+  #       nodeAgent = {
+  #         enablePolicyEventLogs = "true"
+  #       }
+  #       enableNetworkPolicy = "true"
+  #     })
+  #   }
+  # }
 
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
@@ -38,15 +36,14 @@ module "eks" {
     default = {
       instance_types       = ["m5.large"]
       force_update_version = true
-      release_version      = var.ami_release_version
+      # release_version      = var.ami_release_version
 
-      min_size     = var.eks_managed_node_groups.min_size     # 3 
-      max_size     = var.eks_managed_node_groups.max_size     # 6
-      desired_size = var.eks_managed_node_groups.desired_size # 3
-
-      update_config = {
-        max_unavailable_percentage = 50
-      }
+      min_size     = var.eks_managed_node_groups.min_size
+      max_size     = var.eks_managed_node_groups.max_size
+      desired_size = var.eks_managed_node_groups.desired_size
+      # update_config = {
+      #   max_unavailable_percentage = 50
+      # }
 
       labels = {
         workshop-default = "yes"

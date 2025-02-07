@@ -1,13 +1,11 @@
-# The main.tf file sets up some Terraform data sources so we can retrieve the current AWS account and region being used, as well as some default tags:
-
 locals {
   tags = {
-    created-by = "personal-eks-workshop"
-    env        = var.cluster_name
+    created-by   = "personal-eks-workshop"
+    cluster_name = var.cluster_name
   }
 }
 
-# The vpc.tf configuration will make sure our VPC infrastructure is created:
+
 
 locals {
   private_subnets = [for k, v in local.azs : cidrsubnet(var.vpc_cidr, 3, k + 3)]
@@ -88,7 +86,7 @@ data "aws_availability_zones" "available" {
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "~> 5.1"
+  version = "~> 5.18.1"
 
   name = var.cluster_name
   cidr = var.vpc_cidr
