@@ -156,16 +156,23 @@ Get initial admin password:
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 ```
 
+```bash
+export GITHUB_TOKEN=<your-github-token>
+```
+
+
 ### 3. Configure Git Repository
 
 Apply configuration:
 ```bash
-kubectl apply -f argocd/config/repo-config.yaml
+envsubst < argocd/config/repo-config.yaml | kubectl apply -f -
 ```
 
 ### 4. Deploy ApplicationSet
+
 ```bash
-kubectl apply -f applicationset.yaml -n argocd
+export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+envsubst < argocd/applicationset/applicationset.yaml | kubectl apply -f -
 ```
 
 ## Important Notes
