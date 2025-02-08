@@ -7,6 +7,7 @@ spec:
   generators:
     - list:
         elements:
+          # Working components
           - name: metrics-server
             chart: metrics-server
             version: 3.11.0
@@ -14,21 +15,6 @@ spec:
             namespace: kube-system
             valueFile: |
               {}
-          - name: prometheus
-            chart: kube-prometheus-stack
-            version: 55.5.0
-            repoURL: https://prometheus-community.github.io/helm-charts
-            namespace: monitoring
-            valueFile: |
-              prometheus:
-                prometheusSpec:
-                  serviceMonitorSelectorNilUsesHelmValues: false
-                  podMonitorSelectorNilUsesHelmValues: false
-                service:
-                  annotations:
-                    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
-                    service.beta.kubernetes.io/aws-load-balancer-internal: "false"
-                  type: LoadBalancer
           - name: grafana
             chart: grafana
             version: 7.0.3
@@ -53,6 +39,22 @@ spec:
                 name: aws-load-balancer-controller
                 annotations:
                   eks.amazonaws.com/role-arn: arn:aws:iam::${AWS_ACCOUNT_ID}:role/AWSLoadBalancerControllerRole
+          # Prometheus with special handling
+          - name: prometheus
+            chart: kube-prometheus-stack
+            version: 55.5.0
+            repoURL: https://prometheus-community.github.io/helm-charts
+            namespace: monitoring
+            valueFile: |
+              rbac:
+                create: true
+              serviceAccounts:
+                server:
+                  create: true
+              prometheusOperator:
+                admissionWebhooks:
+                  enabled: false  # Disable the admission webhooks
+
   template:
     metadata:
       name: "{{name}}"
@@ -76,3 +78,7 @@ spec:
           - ServerSideApply=true
           - RespectIgnoreDifferences=true
           - Replace=true
+          - PruneLast=true
+          - PrunePropagationPolicy=foreground
+          - SkipDryRunOnMissingResource=true
+          - Force=true
