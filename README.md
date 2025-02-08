@@ -152,3 +152,9 @@ envsubst < argocd/applicationset/applicationset.yaml | kubectl apply -f -
 4. **Source Control**:
    - Backend configuration (`backend.tf`) should be managed separately
    - Sensitive information should be managed through secrets management
+
+
+
+--------
+
+
