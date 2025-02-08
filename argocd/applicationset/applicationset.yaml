@@ -12,22 +12,47 @@ spec:
             version: 3.11.0
             repoURL: https://kubernetes-sigs.github.io/metrics-server/
             namespace: kube-system
+            valueFile: |
+              {}
           - name: prometheus
             chart: kube-prometheus-stack
             version: 55.5.0
             repoURL: https://prometheus-community.github.io/helm-charts
             namespace: monitoring
+            valueFile: |
+              prometheus:
+                prometheusSpec:
+                  serviceMonitorSelectorNilUsesHelmValues: false
+                  podMonitorSelectorNilUsesHelmValues: false
+                service:
+                  annotations:
+                    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+                    service.beta.kubernetes.io/aws-load-balancer-internal: "false"
+                  type: LoadBalancer
           - name: grafana
             chart: grafana
             version: 7.0.3
             repoURL: https://grafana.github.io/helm-charts
             namespace: monitoring
+            valueFile: |
+              grafana:
+                service:
+                  annotations:
+                    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+                    service.beta.kubernetes.io/aws-load-balancer-internal: "false"
+                  type: LoadBalancer
           - name: aws-load-balancer-controller
             chart: aws-load-balancer-controller
             version: 1.11.0
             repoURL: https://aws.github.io/eks-charts
             namespace: kube-system
-
+            valueFile: |
+              clusterName: ${CLUSTER_NAME}
+              serviceAccount:
+                create: true
+                name: aws-load-balancer-controller
+                annotations:
+                  eks.amazonaws.com/role-arn: arn:aws:iam::${AWS_ACCOUNT_ID}:role/AWSLoadBalancerControllerRole
   template:
     metadata:
       name: "{{name}}"
@@ -38,33 +63,7 @@ spec:
         targetRevision: "{{version}}"
         chart: "{{chart}}"
         helm:
-          values: |
-            # For aws-load-balancer-controller specifically
-            clusterName: ${CLUSTER_NAME}  # Add this required value
-            serviceAccount:
-              create: true
-              name: "aws-load-balancer-controller"
-              annotations:
-                eks.amazonaws.com/role-arn: "arn:aws:iam::${AWS_ACCOUNT_ID}:role/AWSLoadBalancerControllerRole"
-
-            # For Grafana
-            grafana:
-              service:
-                annotations:
-                  service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
-                  service.beta.kubernetes.io/aws-load-balancer-internal: "false"
-                type: LoadBalancer
-
-            # For Prometheus
-            prometheus:
-              prometheusSpec:
-                serviceMonitorSelectorNilUsesHelmValues: false
-                podMonitorSelectorNilUsesHelmValues: false
-              service:
-                annotations:
-                  service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
-                  service.beta.kubernetes.io/aws-load-balancer-internal: "false"
-                type: LoadBalancer
+          values: "{{valueFile}}"
       destination:
         server: https://kubernetes.default.svc
         namespace: "{{namespace}}"
