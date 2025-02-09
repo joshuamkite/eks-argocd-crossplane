@@ -2,24 +2,17 @@
 
 - [EKS Cluster Setup with Monitoring and GitOps](#eks-cluster-setup-with-monitoring-and-gitops)
   - [Prerequisites](#prerequisites)
-    - [1. Verify Cluster Access](#1-verify-cluster-access)
-    - [4. Access Monitoring Dashboards](#4-access-monitoring-dashboards)
-  - [Approach 2: Production Setup with Load Balancer Controller](#approach-2-production-setup-with-load-balancer-controller)
-    - [1. Deploy Load Balancer Controller](#1-deploy-load-balancer-controller)
-    - [3. Access Services](#3-access-services)
-  - [Approach 3: GitOps with Argo CD](#approach-3-gitops-with-argo-cd)
-    - [1. Install Argo CD](#1-install-argo-cd)
-    - [2. Access Argo CD UI](#2-access-argo-cd-ui)
-    - [3. Configure Git Repository](#3-configure-git-repository)
-    - [4. Deploy ApplicationSet](#4-deploy-applicationset)
+    - [1. Deploy EKS Cluster](#1-deploy-eks-cluster)
+    - [2.Configure Cluster access](#2configure-cluster-access)
+    - [3. Install ArgoCD](#3-install-argocd)
+    - [4. Access Argo CD UI](#4-access-argo-cd-ui)
+    - [5. Access Monitoring Dashboards](#5-access-monitoring-dashboards)
+    - [6. Configure Git Repository (Currently unused)](#6-configure-git-repository-currently-unused)
+    - [7. Deploy ApplicationSet](#7-deploy-applicationset)
   - [Important Notes](#important-notes)
 
 
-This guide describes three approaches to deploy an EKS cluster with Prometheus and Grafana monitoring:
-
-1. Quick setup with port forwarding
-2. Production-ready setup with AWS Load Balancer Controller
-3. GitOps approach using Argo CD
+Set up an EKS cluster with Prometheus and Grafana monitoring, ArgoCd and AWS Applicatio Load Balancer Controller:
 
 ## Prerequisites
 
@@ -29,13 +22,40 @@ This guide describes three approaches to deploy an EKS cluster with Prometheus a
 - Terraform (or OpenTofu) installed
 
 
-### 1. Verify Cluster Access
+### 1. Deploy EKS Cluster
+
+export TF_VAR_cidr_passlist=${your_ip}$/32
+export AWS_ACCOUNT_ID=${account_id}
+export AWS_REGION=${region}$
+export AWS_PROFILE=${profile}
+export GITHUB_TOKEN=${PAT}
+
+
+### 2.Configure Cluster access
+
+aws eks list-clusters 
+aws eks update-kubeconfig --name personal-eks-workshop
+
+### 3. Install ArgoCD
+
 ```bash
-kubectl get pods -n kube-system
+helm repo add argo https://argoproj.github.io/argo-helm
+helm repo update
+helm install argocd argo/argo-cd --namespace argocd --create-namespace
 ```
 
+### 4. Access Argo CD UI
+```bash
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+```
+Access at: `http://localhost:8080`
 
-### 4. Access Monitoring Dashboards
+Get initial admin password:
+```bash
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+```
+
+### 5. Access Monitoring Dashboards
 
 For Prometheus:
 ```bash
@@ -56,74 +76,14 @@ Get Grafana credentials:
 kubectl get secret --namespace monitoring prometheus-grafana -o jsonpath="{.data.admin-password}" | base64 --decode; echo
 ```
 
-## Approach 2: Production Setup with Load Balancer Controller
-
-This approach is suitable for production environments, providing external access through AWS Load Balancers.
-
-### 1. Deploy Load Balancer Controller
-
-Create service account:
-```bash
-kubectl apply -f helm/aws-load-balancer-controller-sa.yaml
-```
-
-Install controller:
-```bash
-helm repo add eks https://aws.github.io/eks-charts
-
-helm upgrade -i aws-load-balancer-controller eks/aws-load-balancer-controller \
-  -n kube-system \
-  --set clusterName=personal-eks-workshop \
-  --set serviceAccount.create=false \
-  --set serviceAccount.name=aws-load-balancer-controller
-```
-
-
-### 3. Access Services
-
-Get Load Balancer URLs:
-```bash
-kubectl get svc -n monitoring
-```
-
-Access format: `http://<LoadBalancer-Ingress>:<PORT>`
-
-- Prometheus: Port 9090
-- Grafana: Default HTTP port (80)
-
-## Approach 3: GitOps with Argo CD
-
-### 1. Install Argo CD
-```bash
-helm repo add argo https://argoproj.github.io/argo-helm
-helm repo update
-helm install argocd argo/argo-cd --namespace argocd --create-namespace
-```
-
-### 2. Access Argo CD UI
-```bash
-kubectl port-forward svc/argocd-server -n argocd 8080:443
-```
-Access at: `http://localhost:8080`
-
-Get initial admin password:
-```bash
-kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
-```
-
-```bash
-export GITHUB_TOKEN=<your-github-token>
-```
-
-
-### 3. Configure Git Repository
+### 6. Configure Git Repository (Currently unused)
 
 Apply configuration:
 ```bash
 envsubst < argocd/config/repo-config.yaml | kubectl apply -f -
 ```
 
-### 4. Deploy ApplicationSet
+### 7. Deploy ApplicationSet
 
 ```bash
 export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
@@ -140,7 +100,6 @@ envsubst < argocd/applicationset/applicationset.yaml | kubectl apply -f -
 
 2. **Resource Management**:
    - Load balancers must be manually deleted before cluster destruction
-   - Use `helm uninstall prometheus -n monitoring` before running `terraform destroy`
 
 3. **Production Recommendations**:
    - Implement proper IAM roles instead of IAM users
@@ -152,9 +111,4 @@ envsubst < argocd/applicationset/applicationset.yaml | kubectl apply -f -
 4. **Source Control**:
    - Backend configuration (`backend.tf`) should be managed separately
    - Sensitive information should be managed through secrets management
-
-
-
---------
-
 
