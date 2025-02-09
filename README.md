@@ -15,6 +15,7 @@
     - [10. Install the AWS S3 provider into the Kubernetes cluster with a Kubernetes configuration file.](#10-install-the-aws-s3-provider-into-the-kubernetes-cluster-with-a-kubernetes-configuration-file)
   - [Create the ProviderConfig](#create-the-providerconfig)
     - [Create a managed resource](#create-a-managed-resource)
+    - [Modify existing resource](#modify-existing-resource)
 
 
 Set up an EKS cluster with Prometheus and Grafana monitoring, ArgoCd and AWS Applicatio Load Balancer Controller:
@@ -167,20 +168,46 @@ You can view the new CRDs with `kubectl get crds`
 ## Create the ProviderConfig
 The ProviderConfig customizes the settings of the AWS Provider. For OIDC authentication, we'll use the `InjectedIdentity` credential source, which uses the service account's OIDC token for authentication.
 
-Apply the ProviderConfig with this Kubernetes configuration:
+We have to create a runtime configuration first to tell the provider to use the service account we have chisen as otherwise it will use its own one that is autocreated
 
 ```bash
 cat <<EOF | kubectl apply -f -
-apiVersion: aws.upbound.io/v1beta1
-kind: ProviderConfig
+apiVersion: pkg.crossplane.io/v1beta1
+kind: DeploymentRuntimeConfig
 metadata:
-  name: default
+  name: aws-s3-runtime-config
 spec:
-  credentials:
-    source: IRSA
+  deploymentTemplate:
+    spec:
+      selector:
+        matchLabels:
+          pkg.crossplane.io/provider: provider-aws-s3
+      template:
+        metadata:
+          labels:
+            pkg.crossplane.io/provider: provider-aws-s3
+        spec:
+          serviceAccountName: crossplane
+          containers:
+            - name: provider
+              image: placeholder  # This will be overridden by Crossplane
 EOF
 ```
 
+We then apply the ProviderConfig with this Kubernetes configuration, referencing the runtime config above:
+
+```bash
+cat <<EOF | kubectl apply -f -
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-aws-s3
+spec:
+  package: xpkg.upbound.io/upbound/provider-aws-s3:v1
+  runtimeConfigRef:
+    name: aws-s3-runtime-config
+EOF
+```
 
 ### Create a managed resource 
 A managed resource is anything Crossplane creates and manages outside of the Kubernetes cluster.
@@ -203,4 +230,42 @@ spec:
   providerConfigRef:
     name: default
 EOF
+```
+
+Verifiying resource creation
+
+We can see that the bucket is deployed when `SYNCED` and `READY` are both `True`
+
+```yaml
+kubectl get buckets
+NAME                      SYNCED   READY   EXTERNAL-NAME             AGE
+crossplane-bucket-r8lvj   True     True    crossplane-bucket-r8lvj   109m
+```
+
+### Modify existing resource
+
+Ensure correct bucket name
+
+```bash
+cat <<EOF | kubectl apply -f -
+apiVersion: s3.aws.upbound.io/v1beta1
+kind: Bucket
+metadata:
+  name: crossplane-bucket-r8lvj
+spec:
+  forProvider:
+    region: eu-west-1
+    tags:
+      project: crossplane-demo
+      deployment: manual
+  providerConfigRef:
+    name: default
+EOF
+```
+
+Delete the managed resource 
+Before shutting down your Kubernetes cluster, delete the S3 bucket just created.
+
+```bash
+kubectl delete bucket ${bucketname}
 ```
