@@ -1,0 +1,86 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: monitoring-apps
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          # Working components
+          - name: metrics-server
+            chart: metrics-server
+            version: 3.11.0
+            repoURL: https://kubernetes-sigs.github.io/metrics-server/
+            namespace: kube-system
+            valueFile: |
+              {}
+          - name: grafana
+            chart: grafana
+            version: 7.0.3
+            repoURL: https://grafana.github.io/helm-charts
+            namespace: monitoring
+            valueFile: |
+              {}
+          - name: aws-load-balancer-controller
+            chart: aws-load-balancer-controller
+            version: 1.11.0
+            repoURL: https://aws.github.io/eks-charts
+            namespace: kube-system
+            valueFile: |
+              clusterName: ${CLUSTER_NAME}
+              serviceAccount:
+                create: true
+                name: aws-load-balancer-controller
+                annotations:
+                  eks.amazonaws.com/role-arn: arn:aws:iam::${AWS_ACCOUNT_ID}:role/AWSLoadBalancerControllerRole
+          # Prometheus with special handling
+          - name: prometheus
+            chart: kube-prometheus-stack
+            version: 55.5.0
+            repoURL: https://prometheus-community.github.io/helm-charts
+            namespace: monitoring
+            valueFile: |
+              rbac:
+                create: true
+              serviceAccounts:
+                server:
+                  create: true
+              prometheusOperator:
+                admissionWebhooks:
+                  enabled: false
+                tls:
+                  enabled: false    # Disable TLS configuration
+                tlsProxy:
+                  enabled: false    # Disable TLS proxy
+              admissionWebhooks:
+                failurePolicy: Ignore  # Set failure policy to ignore
+                enabled: false
+
+  template:
+    metadata:
+      name: "{{name}}"
+    spec:
+      project: default
+      source:
+        repoURL: "{{repoURL}}"
+        targetRevision: "{{version}}"
+        chart: "{{chart}}"
+        helm:
+          values: "{{valueFile}}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{namespace}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+          - RespectIgnoreDifferences=true
+          # - Replace=true
+          - PruneLast=true
+          - PrunePropagationPolicy=foreground
+          - SkipDryRunOnMissingResource=true
+          # - Force=true
