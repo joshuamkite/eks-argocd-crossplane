@@ -15,6 +15,8 @@
     - [10. Crossplane tutorial part 1 - Install the AWS S3 provider with IRSA authentication](#10-crossplane-tutorial-part-1---install-the-aws-s3-provider-with-irsa-authentication)
     - [Create a managed resource](#create-a-managed-resource)
     - [Modify existing resource](#modify-existing-resource)
+- [Tutorial part 2](#tutorial-part-2)
+  - [Accessing the API nosql happens at the cluster scope.](#accessing-the-api-nosql-happens-at-the-cluster-scope)
 
 
 Set up an EKS cluster with Prometheus and Grafana monitoring, ArgoCd and AWS Applicatio Load Balancer Controller:
@@ -231,3 +233,108 @@ Before shutting down your Kubernetes cluster, delete the S3 bucket just created.
 ```bash
 kubectl delete bucket ${bucketname}
 ```
+
+# Tutorial part 2
+
+based on https://docs.crossplane.io/latest/getting-started/provider-aws-part-2/
+
+Install the DynamoDB Provider 
+
+```bash
+kubectl apply -f argocd/applications/crossplane-aws-dynamodb-provider.yaml 
+```
+
+Apply the API 
+
+```bash
+kubectl apply -f argocd/applications/crossplane-nosql-api.yaml 
+```
+
+View the installed XRD with `kubectl get xrd`.
+
+View the new custom API endpoints with `kubectl api-resources | grep nosql`
+
+```bash
+kubectl apply -f argocd/applications/crossplane-dynamo-with-bucket-composition.yaml 
+```
+
+Apply this Function to install function-patch-and-transform:
+
+```bash
+kubectl apply -f argocd/applications/crossplane-function-patch-and-transform.yaml 
+```
+
+View the Composition with `kubectl get composition`
+
+Create a NoSQL object to create the cloud resources.
+
+```yaml
+cat <<EOF | kubectl apply -f -
+apiVersion: database.example.com/v1alpha1
+kind: NoSQL
+metadata:
+  name: my-nosql-database
+spec: 
+  location: "US"
+EOF
+```
+
+View the resource with `kubectl get nosql`.
+
+
+This object is a Crossplane composite resource (also called an XR).
+It’s a single object representing the collection of resources created from the Composition template.
+
+View the individual resources with `kubectl get managed`
+
+Delete the resources with `kubectl delete nosql my-nosql-database`
+`
+
+Verify Crossplane deleted the resources with `kubectl get managed`
+
+Note
+It may take up to 5 minutes to delete the resources.
+
+## Accessing the API nosql happens at the cluster scope.
+Most organizations isolate their users into namespaces.
+
+A Crossplane Claim is the custom API in a namespace.
+
+Creating a Claim is just like accessing the custom API endpoint, but with the kind from the custom API’s claimNames.
+
+Create a new namespace to test create a Claim in.
+
+`kubectl create namespace crossplane-test`
+
+Then create a Claim in the crossplane-test namespace.
+
+```yaml
+cat <<EOF | kubectl apply -f -
+apiVersion: database.example.com/v1alpha1
+kind: NoSQLClaim
+metadata:
+  name: my-nosql-database
+  namespace: crossplane-test
+spec: 
+  location: "US"
+EOF
+```
+
+View the Claim with `kubectl get claim -n crossplane-test`
+
+The Claim automatically creates a composite resource, which creates the managed resources.
+
+View the Crossplane created composite resource with `kubectl get composite`
+
+Again, view the managed resources with `kubectl get managed`
+
+Deleting the Claim deletes all the Crossplane generated resources.
+
+`kubectl delete claim -n crossplane-test my-nosql-database`
+
+Note
+It may take up to 5 minutes to delete the resources.
+
+Verify Crossplane deleted the composite resource with `kubectl get composite`
+
+Verify Crossplane deleted the managed resources with `kubectl get managed`

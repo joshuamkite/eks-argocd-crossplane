@@ -1,0 +1,38 @@
+---
+apiVersion: pkg.crossplane.io/v1beta1
+kind: DeploymentRuntimeConfig
+metadata:
+  name: aws-dynamodb-runtime-config
+spec:
+  deploymentTemplate:
+    spec:
+      selector:
+        matchLabels:
+          pkg.crossplane.io/provider: provider-aws-dynamodb
+      template:
+        metadata:
+          labels:
+            pkg.crossplane.io/provider: provider-aws-dynamodb
+        spec:
+          serviceAccountName: crossplane
+          containers:
+            - name: package-runtime
+
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-aws-dynamodb
+spec:
+  package: xpkg.upbound.io/upbound/provider-aws-dynamodb:v1
+  runtimeConfigRef:
+    name: aws-dynamodb-runtime-config
+
+---
+apiVersion: aws.upbound.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: default
+spec:
+  credentials:
+    source: IRSA
