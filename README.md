@@ -11,9 +11,8 @@
     - [7. Deploy ApplicationSet](#7-deploy-applicationset)
   - [Important Notes](#important-notes)
     - [8. Login to ArgoCD (CLI)](#8-login-to-argocd-cli)
-    - [9 . Deploy Crossplane](#9--deploy-crossplane)
-    - [10. Install the AWS S3 provider into the Kubernetes cluster with a Kubernetes configuration file.](#10-install-the-aws-s3-provider-into-the-kubernetes-cluster-with-a-kubernetes-configuration-file)
-  - [Create the ProviderConfig](#create-the-providerconfig)
+    - [9 . Deploy Crossplane **via argoCD**](#9--deploy-crossplane-via-argocd)
+    - [10. Crossplane tutorial part 1 - Install the AWS S3 provider with IRSA authentication](#10-crossplane-tutorial-part-1---install-the-aws-s3-provider-with-irsa-authentication)
     - [Create a managed resource](#create-a-managed-resource)
     - [Modify existing resource](#modify-existing-resource)
 
@@ -123,9 +122,14 @@ envsubst < argocd/applicationset/monitoring-apps.yaml | kubectl apply -f -
 
 ### 8. Login to ArgoCD (CLI)
 
+get password with 
+```bash
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+```
+
 argocd login localhost:8080 --username admin --password <your-password> --insecure --grpc-web
 
-### 9 . Deploy Crossplane
+### 9 . Deploy Crossplane **via argoCD**
 
 ```bash
 export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
@@ -140,74 +144,32 @@ kubectl get pods -n crossplane-system
 
 Installing Crossplane creates new Kubernetes API end-points. Look at the new API end-points with `kubectl api-resources | grep crossplane`
 
-
-
-### 10. Install the AWS S3 provider into the Kubernetes cluster with a Kubernetes configuration file.
+### 10. Crossplane tutorial part 1 - Install the AWS S3 provider with IRSA authentication
 
 Partly based on https://docs.crossplane.io/latest/getting-started/provider-aws/
 
-```bash
-cat <<EOF | kubectl apply -f -
-apiVersion: pkg.crossplane.io/v1
-kind: Provider
-metadata:
-  name: provider-aws-s3
-spec:
-  package: xpkg.upbound.io/upbound/provider-aws-s3:v1
-EOF
-```
-
 The Crossplane Provider installs the Kubernetes Custom Resource Definitions (CRDs) representing AWS S3 services. These CRDs allow you to create AWS resources directly inside Kubernetes.
 
+To install the AWS S3 provider with IRSA (IAM Roles for Service Accounts) authentication, we need three components:
 
-Verify the provider installed with `kubectl get providers`
+1. A DeploymentRuntimeConfig that configures the provider to use our service account with IRSA annotations
+2. The Provider itself that installs the AWS S3 CRDs
+3. A ProviderConfig that tells Crossplane to use IRSA authentication
 
-You can view the new CRDs with `kubectl get crds`
-
-
-## Create the ProviderConfig
-The ProviderConfig customizes the settings of the AWS Provider. For OIDC authentication, we'll use the `InjectedIdentity` credential source, which uses the service account's OIDC token for authentication.
-
-We have to create a runtime configuration first to tell the provider to use the service account we have chisen as otherwise it will use its own one that is autocreated
+Apply all three components with:
 
 ```bash
-cat <<EOF | kubectl apply -f -
-apiVersion: pkg.crossplane.io/v1beta1
-kind: DeploymentRuntimeConfig
-metadata:
-  name: aws-s3-runtime-config
-spec:
-  deploymentTemplate:
-    spec:
-      selector:
-        matchLabels:
-          pkg.crossplane.io/provider: provider-aws-s3
-      template:
-        metadata:
-          labels:
-            pkg.crossplane.io/provider: provider-aws-s3
-        spec:
-          serviceAccountName: crossplane
-          containers:
-            - name: provider
-              image: placeholder  # This will be overridden by Crossplane
-EOF
+kubectl apply -f argocd/applications/crossplane-aws-s3-provider-setup.yaml
 ```
 
-We then apply the ProviderConfig with this Kubernetes configuration, referencing the runtime config above:
+The configuration file contains:
+- DeploymentRuntimeConfig: Ensures the provider uses our IRSA-annotated service account instead of auto-creating its own
+- Provider: Installs the AWS S3 provider from Upbound's registry
+- ProviderConfig: Configures the provider to use IRSA authentication
 
-```bash
-cat <<EOF | kubectl apply -f -
-apiVersion: pkg.crossplane.io/v1
-kind: Provider
-metadata:
-  name: provider-aws-s3
-spec:
-  package: xpkg.upbound.io/upbound/provider-aws-s3:v1
-  runtimeConfigRef:
-    name: aws-s3-runtime-config
-EOF
-```
+Verify the installation:
+- Check the provider status: `kubectl get providers`
+- View the new CRDs: `kubectl get crds`
 
 ### Create a managed resource 
 A managed resource is anything Crossplane creates and manages outside of the Kubernetes cluster.
