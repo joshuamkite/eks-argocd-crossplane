@@ -295,7 +295,7 @@ Verify Crossplane deleted the resources with `kubectl get managed`
 Note
 It may take up to 5 minutes to delete the resources.
 
-## Accessing the API nosql at the cluster scope 
+## Accessing the API nosql at the cluster scope
 
 Organizations may isolate their users into namespaces.
 
