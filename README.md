@@ -16,7 +16,7 @@
     - [Create a managed resource](#create-a-managed-resource)
     - [Modify existing resource](#modify-existing-resource)
 - [Tutorial part 2](#tutorial-part-2)
-  - [Accessing the API nosql happens at the cluster scope.](#accessing-the-api-nosql-happens-at-the-cluster-scope)
+  - [Accessing the API nosql at the cluster scope](#accessing-the-api-nosql-at-the-cluster-scope)
 
 
 Set up an EKS cluster with Prometheus and Grafana monitoring, ArgoCd and AWS Applicatio Load Balancer Controller:
@@ -295,8 +295,9 @@ Verify Crossplane deleted the resources with `kubectl get managed`
 Note
 It may take up to 5 minutes to delete the resources.
 
-## Accessing the API nosql happens at the cluster scope.
-Most organizations isolate their users into namespaces.
+## Accessing the API nosql at the cluster scope 
+
+Organizations may isolate their users into namespaces.
 
 A Crossplane Claim is the custom API in a namespace.
 
