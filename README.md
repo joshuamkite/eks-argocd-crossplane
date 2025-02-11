@@ -18,7 +18,7 @@
   - [Accessing the API nosql happens at the cluster scope.](#accessing-the-api-nosql-happens-at-the-cluster-scope)
 
 
-Set up an EKS cluster with Prometheus and Grafana monitoring, ArgoCd and AWS Applicatio Load Balancer Controller:
+Set up an EKS cluster with Prometheus and Grafana monitoring, ArgoCd; AWS Application Load Balancer Controller; Crossplane:
 
 ## Prerequisites
 
