@@ -263,7 +263,8 @@ kubectl get xrd
 ```
 
 View the new custom API endpoints with 
-```bashkubectl api-resources | grep nosql
+```bash
+kubectl api-resources | grep nosql
 ```
 
 ```bash
