@@ -21,7 +21,33 @@ spec:
             repoURL: https://grafana.github.io/helm-charts
             namespace: monitoring
             valueFile: |
-              {}
+              datasources:
+                datasources.yaml:
+                  apiVersion: 1
+                  datasources:
+                    - name: Prometheus
+                      type: prometheus
+                      url: http://prometheus-kube-prometheus-stack-prometheus.monitoring:9090
+                      access: proxy
+                      isDefault: true
+              dashboardProviders:
+                dashboardproviders.yaml:
+                  apiVersion: 1
+                  providers:
+                    - name: 'default'
+                      orgId: 1
+                      folder: ''
+                      type: file
+                      disableDeletion: false
+                      editable: true
+                      options:
+                        path: /var/lib/grafana/dashboards
+              dashboards:
+                default:
+                  kubernetes-cluster:
+                    gnetId: 7249
+                    revision: 1
+                    datasource: Prometheus
           - name: aws-load-balancer-controller
             chart: aws-load-balancer-controller
             version: 1.11.0
@@ -79,8 +105,6 @@ spec:
           - CreateNamespace=true
           - ServerSideApply=true
           - RespectIgnoreDifferences=true
-          # - Replace=true
           - PruneLast=true
           - PrunePropagationPolicy=foreground
           - SkipDryRunOnMissingResource=true
-          # - Force=true

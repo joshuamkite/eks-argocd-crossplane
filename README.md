@@ -124,6 +124,8 @@ kubectl port-forward service/prometheus-grafana 3000:80 --namespace monitoring
 ```
 Access at: http://127.0.0.1:3000
 
+Grafana is configured in the ApplicationSet to access Prometheus. We can browse the prefab Dashboards to see stuff
+
 ## Crossplane 
 
 ### Deploy Crossplane **via argoCD**
