@@ -16,6 +16,13 @@
     - [Delete the managed resource](#delete-the-managed-resource)
   - [Composite resources and APIs (Crossplane Tutorial part 2)](#composite-resources-and-apis-crossplane-tutorial-part-2)
   - [Accessing the API nosql happens at the cluster scope.](#accessing-the-api-nosql-happens-at-the-cluster-scope)
+- [Terraform resources](#terraform-resources)
+  - [Requirements](#requirements)
+  - [Providers](#providers)
+  - [Modules](#modules)
+  - [Resources](#resources)
+  - [Inputs](#inputs)
+  - [Outputs](#outputs)
 
 
 Set up an EKS cluster with Prometheus and Grafana monitoring, ArgoCd; AWS Application Load Balancer Controller; Crossplane:
@@ -360,3 +367,57 @@ It may take up to 5 minutes to delete the resources.
 Verify Crossplane deleted the composite resource with `kubectl get composite`
 
 Verify Crossplane deleted the managed resources with `kubectl get managed`
+
+# Terraform resources
+
+## Requirements
+
+| Name | Version |
+|------|---------|
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.9.0 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.86.0 |
+
+## Providers
+
+| Name | Version |
+|------|---------|
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 5.86.0 |
+
+## Modules
+
+| Name | Source | Version |
+|------|--------|---------|
+| <a name="module_eks"></a> [eks](#module\_eks) | terraform-aws-modules/eks/aws | ~> 20.33.1 |
+| <a name="module_vpc"></a> [vpc](#module\_vpc) | terraform-aws-modules/vpc/aws | ~> 5.18.1 |
+
+## Resources
+
+| Name | Type |
+|------|------|
+| [aws_iam_policy.aws_lb_controller](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
+| [aws_iam_role.aws_lb_controller_role](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
+| [aws_iam_role.crossplane](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
+| [aws_iam_role_policy_attachment.aws_lb_controller_attach](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
+| [aws_iam_role_policy_attachment.crossplane_aws_admin](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
+| [aws_availability_zones.available](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/availability_zones) | data source |
+| [aws_iam_policy_document.assume_role_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
+| [aws_iam_policy_document.crossplane_assume_role](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
+| [aws_iam_policy_document.load_balancer_controller](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
+
+## Inputs
+
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| <a name="input_cidr_passlist"></a> [cidr\_passlist](#input\_cidr\_passlist) | CIDR block to allow all traffic from | `string` | `""` | no |
+| <a name="input_cluster_name"></a> [cluster\_name](#input\_cluster\_name) | Name of the EKS cluster | `string` | `"personal-eks-workshop"` | no |
+| <a name="input_eks_managed_node_groups"></a> [eks\_managed\_node\_groups](#input\_eks\_managed\_node\_groups) | n/a | <pre>object({<br/>    min_size     = number # 3 <br/>    max_size     = number # 6<br/>    desired_size = number # 3<br/>  })</pre> | <pre>{<br/>  "desired_size": 1,<br/>  "max_size": 4,<br/>  "min_size": 1<br/>}</pre> | no |
+| <a name="input_tfstate_bucket"></a> [tfstate\_bucket](#input\_tfstate\_bucket) | Terraform state file bucket | `string` | n/a | yes |
+| <a name="input_tfstate_key"></a> [tfstate\_key](#input\_tfstate\_key) | Terraform state file key | `string` | n/a | yes |
+| <a name="input_tfstate_region"></a> [tfstate\_region](#input\_tfstate\_region) | Terraform state file region | `string` | n/a | yes |
+| <a name="input_vpc_cidr"></a> [vpc\_cidr](#input\_vpc\_cidr) | Defines the CIDR block used on Amazon VPC created for Amazon EKS. | `string` | `"10.42.0.0/16"` | no |
+
+## Outputs
+
+| Name | Description |
+|------|-------------|
+| <a name="output_load_balancer_controller_role_arn"></a> [load\_balancer\_controller\_role\_arn](#output\_load\_balancer\_controller\_role\_arn) | n/a |
