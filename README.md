@@ -411,9 +411,7 @@ Verify Crossplane deleted the managed resources with `kubectl get managed`
 | <a name="input_cidr_passlist"></a> [cidr\_passlist](#input\_cidr\_passlist) | CIDR block to allow all traffic from | `string` | `""` | no |
 | <a name="input_cluster_name"></a> [cluster\_name](#input\_cluster\_name) | Name of the EKS cluster | `string` | `"personal-eks-workshop"` | no |
 | <a name="input_eks_managed_node_groups"></a> [eks\_managed\_node\_groups](#input\_eks\_managed\_node\_groups) | n/a | <pre>object({<br/>    min_size     = number # 3 <br/>    max_size     = number # 6<br/>    desired_size = number # 3<br/>  })</pre> | <pre>{<br/>  "desired_size": 1,<br/>  "max_size": 4,<br/>  "min_size": 1<br/>}</pre> | no |
-| <a name="input_tfstate_bucket"></a> [tfstate\_bucket](#input\_tfstate\_bucket) | Terraform state file bucket | `string` | n/a | yes |
-| <a name="input_tfstate_key"></a> [tfstate\_key](#input\_tfstate\_key) | Terraform state file key | `string` | n/a | yes |
-| <a name="input_tfstate_region"></a> [tfstate\_region](#input\_tfstate\_region) | Terraform state file region | `string` | n/a | yes |
+| <a name="input_tf_state"></a> [tf\_state](#input\_tf\_state) | Terraform state file configuration | <pre>object({<br/>    bucket = string<br/>    key    = string<br/>    region = string<br/>  })</pre> | n/a | yes |
 | <a name="input_vpc_cidr"></a> [vpc\_cidr](#input\_vpc\_cidr) | Defines the CIDR block used on Amazon VPC created for Amazon EKS. | `string` | `"10.42.0.0/16"` | no |
 
 ## Outputs

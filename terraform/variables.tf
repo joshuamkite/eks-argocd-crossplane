@@ -23,19 +23,14 @@ variable "eks_managed_node_groups" {
   }
 }
 
-variable "tfstate_bucket" {
-  description = "Terraform state file bucket"
-  type        = string
-}
 
-variable "tfstate_key" {
-  description = "Terraform state file key"
-  type        = string
-}
-
-variable "tfstate_region" {
-  description = "Terraform state file region"
-  type        = string
+variable "tf_state" {
+  description = "Terraform state file configuration"
+  type = object({
+    bucket = string
+    key    = string
+    region = string
+  })
 }
 
 variable "vpc_cidr" {
