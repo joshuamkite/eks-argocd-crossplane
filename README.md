@@ -106,8 +106,11 @@ This application installs:
 - AWS Load Balancer Controller
 
 ```bash
+export CLUSTER_NAME=<CLUSTER_NAME>
 export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+export AWS_REGION=<REGION>
 envsubst < argocd/applicationset/monitoring-apps.yaml | kubectl apply -f -
+
 ```
 
 ### Access Monitoring Dashboards (optional)

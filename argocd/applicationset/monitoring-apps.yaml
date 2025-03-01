@@ -55,6 +55,7 @@ spec:
             namespace: kube-system
             valueFile: |
               clusterName: ${CLUSTER_NAME}
+              region: ${AWS_REGION}
               serviceAccount:
                 create: true
                 name: aws-load-balancer-controller
