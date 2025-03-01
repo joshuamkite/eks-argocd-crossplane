@@ -221,6 +221,14 @@ data "aws_iam_policy_document" "load_balancer_controller" {
       "elasticloadbalancing:DeleteListener",
       "elasticloadbalancing:CreateRule",
       "elasticloadbalancing:DeleteRule",
+      "elasticloadbalancing:DescribeListenerCertificates",
+      "elasticloadbalancing:DescribeListeners",
+      "elasticloadbalancing:DescribeRules",
+      "elasticloadbalancing:DescribeSSLPolicies",
+      "elasticloadbalancing:DescribeTargetGroups",
+      "elasticloadbalancing:DescribeTargetGroupAttributes",
+      "elasticloadbalancing:DescribeTargetHealth",
+      "elasticloadbalancing:DescribeListenerAttributes",
     ]
   }
 
