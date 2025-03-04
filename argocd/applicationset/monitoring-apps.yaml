@@ -10,14 +10,14 @@ spec:
           # Working components
           - name: metrics-server
             chart: metrics-server
-            version: 3.11.0
+            version: 3.12.2
             repoURL: https://kubernetes-sigs.github.io/metrics-server/
             namespace: kube-system
             valueFile: |
               {}
           - name: grafana
             chart: grafana
-            version: 7.0.3
+            version: 8.2.0
             repoURL: https://grafana.github.io/helm-charts
             namespace: monitoring
             valueFile: |
@@ -50,7 +50,7 @@ spec:
                     datasource: Prometheus
           - name: aws-load-balancer-controller
             chart: aws-load-balancer-controller
-            version: 1.11.0
+            version: 2.11.0
             repoURL: https://aws.github.io/eks-charts
             namespace: kube-system
             valueFile: |
@@ -64,7 +64,7 @@ spec:
           # Prometheus with special handling
           - name: prometheus
             chart: kube-prometheus-stack
-            version: 55.5.0
+            version: 69.7.2
             repoURL: https://prometheus-community.github.io/helm-charts
             namespace: monitoring
             valueFile: |
