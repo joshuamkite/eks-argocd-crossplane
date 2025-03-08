@@ -8,6 +8,10 @@
     - [Set up port forward access to ArgoCD](#set-up-port-forward-access-to-argocd)
   - [Deploy Monitoring ApplicationSet](#deploy-monitoring-applicationset)
     - [Access Monitoring Dashboards (optional)](#access-monitoring-dashboards-optional)
+  - [Hello World Nginx (Optional)](#hello-world-nginx-optional)
+    - [Direct Installation (fallback, without ArgoCD)](#direct-installation-fallback-without-argocd)
+    - [ArgoCD Installation](#argocd-installation)
+    - [Check nginx-hello-world service](#check-nginx-hello-world-service)
   - [Crossplane](#crossplane)
     - [Deploy Crossplane **via argoCD**](#deploy-crossplane-via-argocd)
     - [Install the Crossplane AWS S3 provider with IRSA authentication](#install-the-crossplane-aws-s3-provider-with-irsa-authentication)
@@ -16,6 +20,8 @@
     - [Delete the managed resource](#delete-the-managed-resource)
   - [Composite resources and APIs (Crossplane Tutorial part 2)](#composite-resources-and-apis-crossplane-tutorial-part-2)
   - [Accessing the API nosql happens at the cluster scope.](#accessing-the-api-nosql-happens-at-the-cluster-scope)
+  - [Cleanup](#cleanup)
+    - [Delete nginx-hello-world service](#delete-nginx-hello-world-service)
 - [Terraform resources](#terraform-resources)
   - [Requirements](#requirements)
   - [Providers](#providers)
@@ -135,6 +141,38 @@ kubectl port-forward service/prometheus-grafana 3000:80 --namespace monitoring
 Access at: http://127.0.0.1:3000
 
 Grafana is configured in the ApplicationSet to access Prometheus. We can browse the prefab Dashboards to see stuff
+
+## Hello World Nginx (Optional)
+
+This deploys a simple Nginx server with a custom "Hello World" HTML page, exposed via an Azure LoadBalancer. Can be installed with or without ArgoCD
+
+### Direct Installation (fallback, without ArgoCD)
+
+```bash
+# Apply the deployment, service, and configmap
+kubectl apply -f hello-world/nginx-deployment.yaml
+```
+
+### ArgoCD Installation
+
+```bash
+kubectl apply -f argocd/hello-world-nginx/hello-world.yaml 
+```
+
+### Check nginx-hello-world service
+
+```bash
+
+# Check deployment status
+kubectl get deployment nginx-hello-world
+
+# Wait for the load balancer's external IP to be assigned
+kubectl get service nginx-hello-world-service
+
+# Access the application via the external IP
+# (Replace <EXTERNAL-IP> with the actual IP from the service)
+curl http://<EXTERNAL-IP>
+```
 
 ## Crossplane 
 
@@ -370,6 +408,37 @@ It may take up to 5 minutes to delete the resources.
 Verify Crossplane deleted the composite resource with `kubectl get composite`
 
 Verify Crossplane deleted the managed resources with `kubectl get managed`
+
+
+## Cleanup
+
+### Delete nginx-hello-world service
+
+To properly delete ArgoCD-managed resources locally without touching Git repository or adding finalizers:
+
+1. Delete the ArgoCD Application:
+```bash
+kubectl delete application nginx-hello-world -n argocd
+```
+
+1. Delete all the resources created by the deployment (long version):
+```bash
+kubectl delete deployment nginx-hello-world
+kubectl delete service nginx-hello-world-service
+kubectl delete configmap nginx-hello-world-config
+```
+
+Alternatively (short version), use the original YAML file to delete all resources at once:
+```bash
+kubectl delete -f hello-world/nginx-deployment.yaml
+```
+
+This sequence ensures that:
+1. ArgoCD stops managing (and auto-healing) the resources
+2. All the actual resources are properly removed from your cluster
+
+In a true GitOps workflow, we would normally remove resources by deleting them from the Git repository and letting ArgoCD sync the changes, but these commands provide a quick local cleanup when needed.
+
 
 # Terraform resources
 

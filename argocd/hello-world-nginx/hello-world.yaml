@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nginx-hello-world
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: "https://github.com/joshuamkite/eks-argocd.git"
+    path: hello-world
+    targetRevision: HEAD
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
