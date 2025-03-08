@@ -439,6 +439,10 @@ This sequence ensures that:
 
 In a true GitOps workflow, we would normally remove resources by deleting them from the Git repository and letting ArgoCD sync the changes, but these commands provide a quick local cleanup when needed.
 
+```bash
+tofu destroy
+```
+
 
 # Terraform resources
 
