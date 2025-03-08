@@ -86,7 +86,7 @@ data:
     </head>
     <body>
       <h1>Hello World!</h1>
-      <p>This is an Nginx server running on Google Kubernetes Engine.</p>
+      <p>This is an Nginx server running on AWS Elastic Kubernetes Service (EKS).</p>
       <p>Deployment is successfully serving traffic through a LoadBalancer.</p>
     </body>
     </html>

@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: "https://github.com/joshuamkite/gke-argocd-prometheus-grafana.git"
+    repoURL: "https://github.com/joshuamkite/eks-argocd.git"
     path: hello-world
     targetRevision: feature/hello-world # HEAD
   destination:
