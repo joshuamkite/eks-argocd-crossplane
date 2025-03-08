@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: "https://github.com/joshuamkite/eks-argocd.git"
     path: hello-world
-    targetRevision: feature/hello-world # HEAD
+    targetRevision: HEAD
   destination:
     server: "https://kubernetes.default.svc"
     namespace: default
