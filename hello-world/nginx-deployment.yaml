@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-hello-world
+  labels:
+    app: nginx-hello-world
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-hello-world
+  template:
+    metadata:
+      labels:
+        app: nginx-hello-world
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          volumeMounts:
+            - name: nginx-html
+              mountPath: /usr/share/nginx/html/index.html
+              subPath: index.html
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+      volumes:
+        - name: nginx-html
+          configMap:
+            name: nginx-hello-world-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-hello-world-service
+  annotations:
+    cloud.google.com/neg: '{"ingress": true}' # Network Endpoint Group for GCP load balancing
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+  selector:
+    app: nginx-hello-world
+---
+# Optional ConfigMap for custom HTML content
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-hello-world-config
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Hello World from GKE!</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          margin: 40px;
+          text-align: center;
+        }
+        h1 {
+          color: #3367d6;
+        }
+      </style>
+    </head>
+    <body>
+      <h1>Hello World!</h1>
+      <p>This is an Nginx server running on Google Kubernetes Engine.</p>
+      <p>Deployment is successfully serving traffic through a LoadBalancer.</p>
+    </body>
+    </html>
